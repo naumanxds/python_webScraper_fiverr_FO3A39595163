@@ -54,11 +54,10 @@ def startScraping():
 
                 scrapeLinks.append(link.link)
             startPage += 1
+            dictionaryDetail['next_page'] = startPage
+            dictionaryDetail['last_executed'] = timeNow.strftime('%Y-%m-%d %H:%M:%S.%f')
+            dictionary.writeDict(dictionaryDetail)
             visitWebsites(scrapeLinks)
-
-        dictionaryDetail['next_page'] = startPage
-        dictionaryDetail['last_executed'] = timeNow.strftime('%Y-%m-%d %H:%M:%S.%f')
-        dictionary.writeDict(dictionaryDetail)
         driver.quit()
     except Exception as e:
         error_logger.logError(format(e))
