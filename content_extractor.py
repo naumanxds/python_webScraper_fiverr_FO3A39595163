@@ -9,14 +9,15 @@ from bs4 import BeautifulSoup
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.firefox.options import Options
 
+# create browser instance
+manager = GeckoDriverManager()
+browserOptions = Options()
+browserOptions.add_argument("--headless")
+driver = webdriver.Firefox(executable_path=manager.install(), options=browserOptions)
+
 NOT_FOUND = 'None'
 
 def startScraping():
-    # create browser instance
-    manager = GeckoDriverManager()
-    browserOptions = Options()
-    browserOptions.add_argument("--headless")
-    driver = webdriver.Firefox(executable_path=manager.install(), options=browserOptions)
     try: 
         dictionaryDetail = dictionary.readDict()
         searchKey = dictionaryDetail['search_key']
@@ -26,6 +27,7 @@ def startScraping():
 
         if searchKey is "":
             print(' There is no Search Key to Scrape Please Select option No 2. and Enter a SearchKey')
+            driver.quit()
             return
 
         if not startPage:
@@ -36,31 +38,44 @@ def startScraping():
             driver.quit()
             exit()
 
+        dictionaryDetail['last_executed'] = timeNow.strftime('%Y-%m-%d %H:%M:%S.%f')
+        finalPage, scrapedLinks = getGoogleLinks(searchKey, startPage, filters)
+        dictionaryDetail['next_page'] = finalPage
+        dictionary.writeDict(dictionaryDetail)
 
-        for loop in range(50):
-            print(' >> Starting Google Search for Links << \n')
+        visitWebsites(scrapedLinks)
+    except Exception as e:
+        error_logger.logError(format(e))
+        
+    driver.quit()
+
+
+# get valid link that appear in google search 
+def getGoogleLinks(searchKey, startPage, filters):
+    print(' >> Starting Google Search for Links << \n')
+    for loop in range(15):
+        try:
+            startPage += 1
             scrapeLinks = []
             result = google.search(searchKey, startPage)
+
             for link in result:
+                if str(link.link) == NOT_FOUND:
+                    continue
+
                 flag = False
                 for filterKey in filters:
                     if filterKey in link.link:
                         flag = True
                         break
 
-                if flag:
-                    continue
+                if not flag:
+                    scrapeLinks.append(link.link)
 
-                scrapeLinks.append(link.link)
-            startPage += 1
-            dictionaryDetail['next_page'] = startPage
-            dictionaryDetail['last_executed'] = timeNow.strftime('%Y-%m-%d %H:%M:%S.%f')
-            dictionary.writeDict(dictionaryDetail)
-            visitWebsites(scrapeLinks)
-    except Exception as e:
-        error_logger.logError(format(e))
-        
-    driver.quit()
+        except Exception as e:
+            error_logger.logError(format(e))
+
+    return startPage, scrapeLinks
 
 # visit each website extracted from google search
 def visitWebsites(links):
@@ -113,13 +128,13 @@ def extractEmails(html, baseUrl):
 
         if flag:
             mails.insert(0, baseUrl)
-            writeFile(mails, baseUrl)
+            writeCSV(mails, baseUrl)
             print(' => Conatct Extracted Successfully for => ' + baseUrl)
     except Exception as e:
         error_logger.logError(format(e))
 
 # write in file
-def writeFile(data, url = ''):
+def writeCSV(data, url = ''):
     try:
         with open('Contact-Lists-' + datetime.now().strftime('%d-%b-%y') + '.csv', 'a', encoding="utf-8") as fh:
             csvWriter = csv.writer(fh)
