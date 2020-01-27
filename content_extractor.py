@@ -9,15 +9,14 @@ from bs4 import BeautifulSoup
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.firefox.options import Options
 
-# create browser instance
-manager = GeckoDriverManager()
-browserOptions = Options()
-browserOptions.add_argument("--headless")
-driver = webdriver.Firefox(executable_path=manager.install(), options=browserOptions)
-
 NOT_FOUND = 'None'
 
 def startScraping():
+    # create browser instance
+    manager = GeckoDriverManager()
+    browserOptions = Options()
+    browserOptions.add_argument("--headless")
+    driver = webdriver.Firefox(executable_path=manager.install(), options=browserOptions)
     try: 
         dictionaryDetail = dictionary.readDict()
         searchKey = dictionaryDetail['search_key']
@@ -58,9 +57,10 @@ def startScraping():
             dictionaryDetail['last_executed'] = timeNow.strftime('%Y-%m-%d %H:%M:%S.%f')
             dictionary.writeDict(dictionaryDetail)
             visitWebsites(scrapeLinks)
-        driver.quit()
     except Exception as e:
         error_logger.logError(format(e))
+        
+    driver.quit()
 
 # visit each website extracted from google search
 def visitWebsites(links):
