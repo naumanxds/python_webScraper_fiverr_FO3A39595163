@@ -130,6 +130,10 @@ def extractEmails(html, baseUrl):
             mails.insert(0, baseUrl)
             writeCSV(mails, baseUrl)
             print(' => Conatct Extracted Successfully for => ' + baseUrl)
+        else:
+            writeCSV([baseUrl, ' Contct was not found '], baseUrl)
+            print(' => Conatct Extracted Unsuccessfully for => ' + baseUrl)
+            
     except Exception as e:
         error_logger.logError(format(e))
 
